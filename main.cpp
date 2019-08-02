@@ -14,6 +14,10 @@ int main() {
     glfwMakeContextCurrent(window);
 
     while (!glfwWindowShouldClose(window)) {
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        glViewport(0, 0, width, height);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
