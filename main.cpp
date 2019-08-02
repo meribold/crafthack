@@ -4,5 +4,19 @@ int main() {
     if (!glfwInit()) {
         return 1;
     }
+
+    GLFWwindow* window = glfwCreateWindow(640, 480, "CraftHack", nullptr, nullptr);
+    if (!window) {
+        glfwTerminate();
+        return 2;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    while (!glfwWindowShouldClose(window)) {
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
     glfwTerminate();
 }
