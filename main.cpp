@@ -1,30 +1,37 @@
 #include <cstdlib>   // std::exit
+#include <fstream>   // std::ifstream
 #include <iostream>  // std::cerr
 #include <memory>    // std::unique_ptr
+#include <sstream>   // std::stringstream
+#include <string>    // std::string
 
 // We need to include this before `glfw3.h`.
 #include <GL/glew.h>
 
 #include <GLFW/glfw3.h>
 
-GLuint createShaderProgram() {
-    const char* vertexShaderCode = R"(
-        #version 330 core
-        layout (location = 0) in vec3 position;
-        layout (location = 1) in vec3 color;
-        out vec3 vertexColor;
-        void main() {
-            gl_Position = vec4(position, 1.0);
-            vertexColor = color;
-        })";
+struct ShaderProgram {
+    ShaderProgram(const std::string& vertexShaderPath,
+                  const std::string& fragmentShaderPath);
+    void use();
+    GLuint handle;
+};
 
-    const char* fragmentShaderCode = R"(
-        #version 330 core
-        in vec3 vertexColor;
-        out vec4 fragmentColor;
-        void main() {
-            fragmentColor = vec4(vertexColor, 1.0f);
-        })";
+ShaderProgram::ShaderProgram(const std::string& vertexShaderPath,
+                             const std::string& fragmentShaderPath) {
+    std::string vertexShaderCodeString, fragmentShaderCodeString;
+    const char* vertexShaderCode;
+    const char* fragmentShaderCode;
+    {
+        std::stringstream sStream;
+        sStream << std::ifstream(vertexShaderPath).rdbuf();
+        vertexShaderCodeString = sStream.str();
+        sStream.str("");
+        sStream << std::ifstream(fragmentShaderPath).rdbuf();
+        fragmentShaderCodeString = sStream.str();
+    }
+    vertexShaderCode = vertexShaderCodeString.c_str();
+    fragmentShaderCode = fragmentShaderCodeString.c_str();
 
     GLint success;
 
@@ -56,26 +63,25 @@ GLuint createShaderProgram() {
         std::exit(65);
     }
 
-    GLuint shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    this->handle = glCreateProgram();
+    glAttachShader(this->handle, vertexShader);
+    glAttachShader(this->handle, fragmentShader);
+    glLinkProgram(this->handle);
+    glGetProgramiv(this->handle, GL_LINK_STATUS, &success);
     if (!success) {
         GLint length;
-        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &length);
+        glGetProgramiv(this->handle, GL_INFO_LOG_LENGTH, &length);
         std::unique_ptr<char> infoLog(new char[length]);
-        glGetProgramInfoLog(shaderProgram, length, nullptr, infoLog.get());
+        glGetProgramInfoLog(this->handle, length, nullptr, infoLog.get());
         std::cerr << "Failed to link shader program: " << infoLog.get() << '\n';
         std::exit(66);
     }
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-
-    return shaderProgram;
 }
+
+void ShaderProgram::use() { glUseProgram(this->handle); }
 
 GLuint createVertexArrayObject() {
     // clang-format off
@@ -148,10 +154,10 @@ int main() {
         return 3;
     }
 
-    GLuint shaderProgram = createShaderProgram();
+    ShaderProgram shaderProgram("vertex_shader.vert", "fragment_shader.frag");
     GLuint vao = createVertexArrayObject();
 
-    glUseProgram(shaderProgram);
+    shaderProgram.use();
     glBindVertexArray(vao);
 
     // The render loop
