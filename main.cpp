@@ -64,7 +64,17 @@ GLuint createShaderProgram() {
 }
 
 GLuint createVertexArrayObject() {
-    GLfloat vertices[] = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
+    GLfloat vertices[] = {
+        0.5f,  0.5f,  0.0f,  // top right
+        0.5f,  -0.5f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f,  // bottom left
+        -0.5f, 0.5f,  0.0f   // top left
+    };
+
+    GLuint indices[] = {
+        0, 1, 3,  // first triangle
+        1, 2, 3   // second triangle
+    };
 
     // Create a vertex array object (VAO).
     GLuint vao;
@@ -76,9 +86,17 @@ GLuint createVertexArrayObject() {
     GLuint vbo;
     glGenBuffers(1, &vbo);
 
-    // Copy our vertices into a buffer for OpenGL.
+    // Copy our vertices into the OpenGL buffer.
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
+
+    // Create an element buffer object (EBO).
+    GLuint ebo;
+    glGenBuffers(1, &ebo);
+
+    // Copy our indices into the buffer.
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
 
     // Tell OpenGL how to interpret the vertex data (the `vertices` array).
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -123,7 +141,7 @@ int main() {
         glViewport(0, 0, width, height);
 
         glClear(GL_COLOR_BUFFER_BIT);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
