@@ -10,19 +10,20 @@
 GLuint createShaderProgram() {
     const char* vertexShaderCode = R"(
         #version 330 core
-        in vec3 position;
+        layout (location = 0) in vec3 position;
+        layout (location = 1) in vec3 color;
         out vec3 vertexColor;
         void main() {
             gl_Position = vec4(position, 1.0);
-            vertexColor = position.xxx;
+            vertexColor = color;
         })";
 
     const char* fragmentShaderCode = R"(
         #version 330 core
         in vec3 vertexColor;
-        out vec4 color;
+        out vec4 fragmentColor;
         void main() {
-            color = vec4(vertexColor * vertexColor, 1.0f);
+            fragmentColor = vec4(vertexColor, 1.0f);
         })";
 
     GLint success;
@@ -77,12 +78,15 @@ GLuint createShaderProgram() {
 }
 
 GLuint createVertexArrayObject() {
+    // clang-format off
     GLfloat vertices[] = {
-        0.5f,  0.5f,  0.0f,  // top right
-        0.5f,  -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f, 0.5f,  0.0f   // top left
+        // positions        // colors
+         0.5f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  // top right
+         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f,  // bottom left
+        -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // top left
     };
+    // clang-format on
 
     GLuint indices[] = {
         0, 1, 3,  // first triangle
@@ -112,8 +116,11 @@ GLuint createVertexArrayObject() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
 
     // Tell OpenGL how to interpret the vertex data (the `vertices` array).
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
+                          reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
 
     return vao;
 }
