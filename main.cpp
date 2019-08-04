@@ -11,15 +11,18 @@ GLuint createShaderProgram() {
     const char* vertexShaderCode = R"(
         #version 330 core
         in vec3 position;
+        out vec3 vertexColor;
         void main() {
             gl_Position = vec4(position, 1.0);
+            vertexColor = position.xxx;
         })";
 
     const char* fragmentShaderCode = R"(
         #version 330 core
+        in vec3 vertexColor;
         out vec4 color;
         void main() {
-            color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+            color = vec4(vertexColor * vertexColor, 1.0f);
         })";
 
     GLint success;
@@ -44,6 +47,11 @@ GLuint createShaderProgram() {
     glCompileShader(fragmentShader);
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success) {
+        GLint length;
+        glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &length);
+        std::unique_ptr<char> infoLog(new char[length]);
+        glGetShaderInfoLog(fragmentShader, length, nullptr, infoLog.get());
+        std::cerr << "Failed to compile fragment shader: " << infoLog.get() << '\n';
         std::exit(65);
     }
 
@@ -54,6 +62,11 @@ GLuint createShaderProgram() {
     glLinkProgram(shaderProgram);
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
+        GLint length;
+        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &length);
+        std::unique_ptr<char> infoLog(new char[length]);
+        glGetProgramInfoLog(shaderProgram, length, nullptr, infoLog.get());
+        std::cerr << "Failed to link shader program: " << infoLog.get() << '\n';
         std::exit(66);
     }
 
