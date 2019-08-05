@@ -1,3 +1,5 @@
+#include <cassert>   // assert
+#include <cstdint>   // std::unit32_t
 #include <cstdlib>   // std::exit
 #include <fstream>   // std::ifstream
 #include <iostream>  // std::cerr
@@ -9,6 +11,39 @@
 #include <GL/glew.h>
 
 #include <GLFW/glfw3.h>
+
+#include <png.h>  // libpng(3)
+
+// Load a PNG image.  See libpng(3) and `example.c` from the libpng source code.
+struct pngImage {
+    pngImage(const char path[]) {
+        image.version = PNG_IMAGE_VERSION;
+        image.opaque = nullptr;
+        if (png_image_begin_read_from_file(&image, path) == 0) {
+            std::exit(192);
+        }
+        image.format = PNG_FORMAT_RGB;
+        assert(PNG_IMAGE_SIZE(image) == 3072);
+        buffer = reinterpret_cast<std::uint8_t*>(malloc(PNG_IMAGE_SIZE(image)));
+        if (!buffer) {
+            png_image_free(&image);
+            std::exit(193);
+        }
+        if (png_image_finish_read(&image, nullptr, buffer, 0, nullptr) == 0) {
+            std::exit(194);
+        }
+    }
+
+    ~pngImage() { free(buffer); }
+
+    std::uint32_t getWidth() { return image.width; }
+    std::uint32_t getHeight() { return image.height; }
+
+    std::uint8_t* buffer = nullptr;
+
+   private:
+    png_image image;
+};
 
 struct ShaderProgram {
     ShaderProgram(const std::string& vertexShaderPath,
@@ -86,11 +121,11 @@ void ShaderProgram::use() { glUseProgram(this->handle); }
 GLuint createVertexArrayObject() {
     // clang-format off
     GLfloat vertices[] = {
-        // positions        // colors
-         0.5f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  // top right
-         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // top left
+        // positions           // colors            // texture coordinates
+         0.5f,  0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,  // top right
+         0.5f, -0.5f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f,  // bottom left
+        -0.5f,  0.5f, 0.0f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,  // top left
     };
     // clang-format on
 
@@ -121,12 +156,27 @@ GLuint createVertexArrayObject() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
 
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    {
+        pngImage image("texture.png");
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.getWidth(), image.getHeight(), 0,
+                     GL_RGB, GL_UNSIGNED_BYTE, image.buffer);
+    }
+    if (glGetError() != GL_NO_ERROR) std::exit(128);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
     // Tell OpenGL how to interpret the vertex data (the `vertices` array).
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat),
                           reinterpret_cast<void*>(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GL_FLOAT),
+                          reinterpret_cast<void*>(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     return vao;
 }
