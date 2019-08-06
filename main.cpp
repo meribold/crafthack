@@ -24,22 +24,20 @@ struct pngImage {
         }
         image.format = PNG_FORMAT_RGB;
         assert(PNG_IMAGE_SIZE(image) == 3072);
-        buffer = reinterpret_cast<std::uint8_t*>(malloc(PNG_IMAGE_SIZE(image)));
+        buffer = std::unique_ptr<std::uint8_t>(new std::uint8_t[PNG_IMAGE_SIZE(image)]);
         if (!buffer) {
             png_image_free(&image);
             std::exit(193);
         }
-        if (png_image_finish_read(&image, nullptr, buffer, 0, nullptr) == 0) {
+        if (!png_image_finish_read(&image, nullptr, buffer.get(), 0, nullptr)) {
             std::exit(194);
         }
     }
 
-    ~pngImage() { free(buffer); }
-
     std::uint32_t getWidth() { return image.width; }
     std::uint32_t getHeight() { return image.height; }
 
-    std::uint8_t* buffer = nullptr;
+    std::unique_ptr<uint8_t> buffer;
 
    private:
     png_image image;
@@ -162,7 +160,7 @@ GLuint createVertexArrayObject() {
     {
         pngImage image("texture.png");
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.getWidth(), image.getHeight(), 0,
-                     GL_RGB, GL_UNSIGNED_BYTE, image.buffer);
+                     GL_RGB, GL_UNSIGNED_BYTE, image.buffer.get());
     }
     if (glGetError() != GL_NO_ERROR) std::exit(128);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
