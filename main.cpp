@@ -123,11 +123,11 @@ void ShaderProgram::use() { glUseProgram(this->handle); }
 GLuint createVertexArrayObject() {
     // clang-format off
     GLfloat vertices[] = {
-        // positions           // colors            // texture coordinates
-         0.5f,  0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,  // top right
-         0.5f, -0.5f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,  // top left
+        // positions           // texture coordinates
+         0.5f,  0.5f, 0.0f,    1.0f, 1.0f,  // top right
+         0.5f, -0.5f, 0.0f,    1.0f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f,    0.0f, 0.0f,  // bottom left
+        -0.5f,  0.5f, 0.0f,    0.0f, 1.0f,  // top left
     };
     // clang-format on
 
@@ -171,14 +171,11 @@ GLuint createVertexArrayObject() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     // Tell OpenGL how to interpret the vertex data (the `vertices` array).
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat),
-                          reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GL_FLOAT),
+                          reinterpret_cast<void*>(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GL_FLOAT),
-                          reinterpret_cast<void*>(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
 
     return vao;
 }
