@@ -206,20 +206,20 @@ int main() {
     ShaderProgram shaderProgram("vertex_shader.vert", "fragment_shader.frag");
     GLuint vao = createVertexArrayObject();
 
-    glm::mat4 tMatrix(1.0f);  // the identity matrix
-    tMatrix = glm::rotate(tMatrix, glm::radians(45.0f), glm::vec3(0.0, 0.0, 1.0));
     GLint tMatrixLocation = glGetUniformLocation(shaderProgram.handle, "tMatrix");
 
     shaderProgram.use();
     glBindVertexArray(vao);
-
-    glUniformMatrix4fv(tMatrixLocation, 1, GL_FALSE, glm::value_ptr(tMatrix));
 
     // The render loop
     while (!glfwWindowShouldClose(window)) {
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
+
+        float time = static_cast<float>(glfwGetTime());
+        glm::mat4 tMatrix = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0, 0.0, 1.0));
+        glUniformMatrix4fv(tMatrixLocation, 1, GL_FALSE, glm::value_ptr(tMatrix));
 
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
