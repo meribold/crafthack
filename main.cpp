@@ -14,6 +14,10 @@
 
 #include <png.h>  // libpng(3)
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 // Load a PNG image.  See libpng(3) and `example.c` from the libpng source code.
 struct pngImage {
     pngImage(const char path[]) {
@@ -205,8 +209,14 @@ int main() {
     ShaderProgram shaderProgram("vertex_shader.vert", "fragment_shader.frag");
     GLuint vao = createVertexArrayObject();
 
+    glm::mat4 tMatrix(1.0f);  // the identity matrix
+    tMatrix = glm::rotate(tMatrix, glm::radians(45.0f), glm::vec3(0.0, 0.0, 1.0));
+    GLint tMatrixLocation = glGetUniformLocation(shaderProgram.handle, "tMatrix");
+
     shaderProgram.use();
     glBindVertexArray(vao);
+
+    glUniformMatrix4fv(tMatrixLocation, 1, GL_FALSE, glm::value_ptr(tMatrix));
 
     // The render loop
     while (!glfwWindowShouldClose(window)) {
