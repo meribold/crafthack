@@ -1,12 +1,13 @@
-#include <algorithm>  // std::clamp
-#include <cassert>    // assert
-#include <cstdint>    // std::unit32_t
-#include <cstdlib>    // std::exit
-#include <fstream>    // std::ifstream
-#include <iostream>   // std::cerr
-#include <memory>     // std::unique_ptr
-#include <sstream>    // std::stringstream
-#include <string>     // std::string
+#include <algorithm>      // std::clamp
+#include <cassert>        // assert
+#include <cstdint>        // std::unit32_t
+#include <cstdlib>        // std::exit
+#include <fstream>        // std::ifstream
+#include <iostream>       // std::cerr
+#include <memory>         // std::unique_ptr
+#include <sstream>        // std::stringstream
+#include <string>         // std::string
+#include <unordered_map>  // std::unordered_map
 
 // We need to include this before `glfw3.h`.
 #include <GL/glew.h>
@@ -19,6 +20,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>  // glm::rotate(float, vec3)
 
 // Load a PNG image.  See libpng(3) and `example.c` from the libpng source code.
 struct pngImage {
@@ -182,6 +184,10 @@ GLuint createVertexArrayObject() {
     return vao;
 }
 
+static glm::mat4 viewRotation(1.0f);
+static glm::mat4 viewTranslation =
+    glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+
 static GLint viewMatrixLocation;
 static GLint projectionMatrixLocation;
 
@@ -207,15 +213,26 @@ void cursorPosCallback(GLFWwindow*, double newX, double newY) {
     yaw += mouseSensitivity * deltaX;
     pitch = std::clamp(pitch + mouseSensitivity * deltaY, minPitch, maxPitch);
 
-    glm::mat4 viewMatrix = glm::rotate(glm::mat4(1.0f), static_cast<float>(yaw),
-                                       glm::vec3(0.0f, 1.0f, 0.0f));
-    viewMatrix =
-        glm::rotate(viewMatrix, static_cast<float>(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
-    viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, -3.0f));
-    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+    viewRotation = glm::rotate(static_cast<float>(pitch), glm::vec3(1.0f, 0.0f, 0.0f)) *
+                   glm::rotate(static_cast<float>(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
 
     lastX = newX;
     lastY = newY;
+}
+
+static std::unordered_map<int, float> pressTimes;
+static std::unordered_map<int, float> releaseTimes;
+
+void keyCallback(GLFWwindow*, int key, int, int action, int) {
+    float now = static_cast<float>(glfwGetTime());
+    switch (action) {
+        case GLFW_PRESS:
+            pressTimes[key] = now;
+            break;
+        case GLFW_RELEASE:
+            releaseTimes[key] = now;
+            break;
+    }
 }
 
 int main() {
@@ -258,6 +275,7 @@ int main() {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwSetCursorPosCallback(window, cursorPosCallback);
+    glfwSetKeyCallback(window, keyCallback);
     cursorPosCallback(window, 320, 240);
 
     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.8f, 0.0f));
@@ -266,12 +284,63 @@ int main() {
     glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
     // The render loop
+    float before = static_cast<float>(glfwGetTime());
     while (!glfwWindowShouldClose(window)) {
+        float now = static_cast<float>(glfwGetTime());
+
+        for (auto it = pressTimes.begin(); it != pressTimes.end();) {
+            int keyCode = it->first;
+            float pressTime = it->second;
+            float pressDuration;
+            if (glfwGetKey(window, keyCode) == GLFW_RELEASE) {
+                // The key was intermediately released.
+                auto searchIt = releaseTimes.find(keyCode);
+                // The assumption here is that the callback always gets notified about key
+                // release events before the return value of `glfwGetKey` changes.
+                assert(searchIt != releaseTimes.end());
+                float releaseTime = searchIt->second;
+                pressDuration = releaseTime - before;
+                releaseTimes.erase(searchIt);
+                it = pressTimes.erase(it);
+            } else {
+                pressDuration = std::min(now - before, now - pressTime);
+                ++it;
+            }
+
+            glm::vec3 viewForward =
+                glm::transpose(glm::mat3(viewRotation)) * glm::vec3(0.0f, 0.0f, -1.0);
+            glm::vec3 viewRight =
+                glm::transpose(glm::mat3(viewRotation)) * glm::vec3(1.0f, 0.0f, 0.0);
+            switch (keyCode) {
+                case GLFW_KEY_W:
+                    viewTranslation =
+                        glm::translate(viewTranslation, -pressDuration * viewForward);
+                    break;
+                case GLFW_KEY_A:
+                    viewTranslation =
+                        glm::translate(viewTranslation, pressDuration * viewRight);
+                    break;
+                case GLFW_KEY_S:
+                    viewTranslation =
+                        glm::translate(viewTranslation, pressDuration * viewForward);
+                    break;
+                case GLFW_KEY_D:
+                    viewTranslation =
+                        glm::translate(viewTranslation, -pressDuration * viewRight);
+                    break;
+            }
+        }
+
+        glm::mat4 viewMatrix = viewRotation * viewTranslation;
+        glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        before = now;
     }
 
     glfwTerminate();
