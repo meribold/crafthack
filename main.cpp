@@ -180,6 +180,16 @@ GLuint createVertexArrayObject() {
     return vao;
 }
 
+static GLint projectionMatrixLocation;
+void framebufferSizeCallback(GLFWwindow*, int width, int height) {
+    glViewport(0, 0, width, height);
+    glm::mat4 projectionMatrix = glm::perspective(
+        glm::radians(45.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f,
+        100.0f);
+    glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE,
+                       glm::value_ptr(projectionMatrix));
+}
+
 int main() {
     if (!glfwInit()) {
         return 1;
@@ -208,11 +218,14 @@ int main() {
 
     GLint modelMatrixLocation = glGetUniformLocation(shaderProgram.handle, "modelMatrix");
     GLint viewMatrixLocation = glGetUniformLocation(shaderProgram.handle, "viewMatrix");
-    GLint projectionMatrixLocation =
+    projectionMatrixLocation =
         glGetUniformLocation(shaderProgram.handle, "projectionMatrix");
 
     shaderProgram.use();
     glBindVertexArray(vao);
+
+    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+    framebufferSizeCallback(window, 640, 480);
 
     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.8f, 0.0f));
     modelMatrix =
@@ -224,17 +237,6 @@ int main() {
 
     // The render loop
     while (!glfwWindowShouldClose(window)) {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        glViewport(0, 0, width, height);
-
-        glm::mat4 projectionMatrix = glm::perspective(
-            glm::radians(45.0f), static_cast<float>(width) / static_cast<float>(height),
-            0.1f, 100.0f);
-
-        glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE,
-                           glm::value_ptr(projectionMatrix));
-
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
