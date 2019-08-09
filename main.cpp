@@ -1,11 +1,12 @@
-#include <cassert>   // assert
-#include <cstdint>   // std::unit32_t
-#include <cstdlib>   // std::exit
-#include <fstream>   // std::ifstream
-#include <iostream>  // std::cerr
-#include <memory>    // std::unique_ptr
-#include <sstream>   // std::stringstream
-#include <string>    // std::string
+#include <algorithm>  // std::clamp
+#include <cassert>    // assert
+#include <cstdint>    // std::unit32_t
+#include <cstdlib>    // std::exit
+#include <fstream>    // std::ifstream
+#include <iostream>   // std::cerr
+#include <memory>     // std::unique_ptr
+#include <sstream>    // std::stringstream
+#include <string>     // std::string
 
 // We need to include this before `glfw3.h`.
 #include <GL/glew.h>
@@ -14,6 +15,7 @@
 
 #include <png.h>  // libpng(3)
 
+#include <glm/ext/scalar_constants.hpp>  // glm::pi
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -180,7 +182,9 @@ GLuint createVertexArrayObject() {
     return vao;
 }
 
+static GLint viewMatrixLocation;
 static GLint projectionMatrixLocation;
+
 void framebufferSizeCallback(GLFWwindow*, int width, int height) {
     glViewport(0, 0, width, height);
     glm::mat4 projectionMatrix = glm::perspective(
@@ -188,6 +192,30 @@ void framebufferSizeCallback(GLFWwindow*, int width, int height) {
         100.0f);
     glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE,
                        glm::value_ptr(projectionMatrix));
+}
+
+void cursorPosCallback(GLFWwindow*, double newX, double newY) {
+    static constexpr double mouseSensitivity = 0.001f;
+    static constexpr double maxPitch = 0.45 * glm::pi<double>();
+    static constexpr double minPitch = -maxPitch;
+
+    static double lastX = 320.0, lastY = 240.0;
+    static double yaw = 0.0, pitch = 0.0;
+    double deltaX = newX - lastX;
+    double deltaY = newY - lastY;
+
+    yaw += mouseSensitivity * deltaX;
+    pitch = std::clamp(pitch + mouseSensitivity * deltaY, minPitch, maxPitch);
+
+    glm::mat4 viewMatrix = glm::rotate(glm::mat4(1.0f), static_cast<float>(yaw),
+                                       glm::vec3(0.0f, 1.0f, 0.0f));
+    viewMatrix =
+        glm::rotate(viewMatrix, static_cast<float>(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+    viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, -3.0f));
+    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+
+    lastX = newX;
+    lastY = newY;
 }
 
 int main() {
@@ -217,7 +245,7 @@ int main() {
     GLuint vao = createVertexArrayObject();
 
     GLint modelMatrixLocation = glGetUniformLocation(shaderProgram.handle, "modelMatrix");
-    GLint viewMatrixLocation = glGetUniformLocation(shaderProgram.handle, "viewMatrix");
+    viewMatrixLocation = glGetUniformLocation(shaderProgram.handle, "viewMatrix");
     projectionMatrixLocation =
         glGetUniformLocation(shaderProgram.handle, "projectionMatrix");
 
@@ -227,13 +255,15 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
     framebufferSizeCallback(window, 640, 480);
 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    glfwSetCursorPosCallback(window, cursorPosCallback);
+    cursorPosCallback(window, 320, 240);
+
     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.8f, 0.0f));
     modelMatrix =
         glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-    glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
-    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
     // The render loop
     while (!glfwWindowShouldClose(window)) {
