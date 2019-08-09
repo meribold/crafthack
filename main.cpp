@@ -202,7 +202,7 @@ void framebufferSizeCallback(GLFWwindow*, int width, int height) {
 
 void cursorPosCallback(GLFWwindow*, double newX, double newY) {
     static constexpr double mouseSensitivity = 0.001f;
-    static constexpr double maxPitch = 0.45 * glm::pi<double>();
+    static constexpr double maxPitch = 0.5 * glm::pi<double>();
     static constexpr double minPitch = -maxPitch;
 
     static double lastX = 320.0, lastY = 240.0;
