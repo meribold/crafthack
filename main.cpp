@@ -328,6 +328,15 @@ int main() {
                     viewTranslation =
                         glm::translate(viewTranslation, -pressDuration * viewRight);
                     break;
+                // Use the space and C keys to go up and down in *world* coordinates.
+                case GLFW_KEY_SPACE:
+                    viewTranslation = glm::translate(
+                        viewTranslation, glm::vec3(0.0f, -pressDuration, 0.0f));
+                    break;
+                case GLFW_KEY_C:
+                    viewTranslation = glm::translate(
+                        viewTranslation, glm::vec3(0.0f, pressDuration, 0.0f));
+                    break;
             }
         }
 
