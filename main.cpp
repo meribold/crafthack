@@ -294,6 +294,8 @@ int main() {
         return 3;
     }
 
+    glEnable(GL_DEPTH_TEST);
+
     ShaderProgram shaderProgram("vertex_shader.vert", "fragment_shader.frag");
     GLuint vao = createVertexArrayObject();
 
@@ -377,7 +379,7 @@ int main() {
         glm::mat4 viewMatrix = viewRotation * viewTranslation;
         glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
