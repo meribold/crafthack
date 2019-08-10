@@ -127,18 +127,54 @@ void ShaderProgram::use() { glUseProgram(this->handle); }
 GLuint createVertexArrayObject() {
     // clang-format off
     GLfloat vertices[] = {
-        // positions           // texture coordinates
-         0.5f,  0.5f, 0.0f,    1.0f, 1.0f,  // top right
-         0.5f, -0.5f, 0.0f,    1.0f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,    0.0f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f,    0.0f, 1.0f,  // top left
+        // positions            // texture coordinates
+         0.5f,  0.5f,  0.5f,    1.0f, 1.0f,  // top right front
+         0.5f, -0.5f,  0.5f,    1.0f, 0.0f,  // bottom right front
+        -0.5f, -0.5f,  0.5f,    0.0f, 0.0f,  // bottom left front
+        -0.5f,  0.5f,  0.5f,    0.0f, 1.0f,  // top left front
+
+         0.5f,  0.5f, -0.5f,    1.0f, 1.0f,  // top right back
+         0.5f, -0.5f, -0.5f,    1.0f, 0.0f,  // bottom right back
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,  // bottom left back
+        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f,  // top left back
+
+         0.5f, -0.5f,  0.5f,    1.0f, 1.0f,  // bottom right front
+         0.5f, -0.5f, -0.5f,    1.0f, 0.0f,  // bottom right back
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,  // bottom left back
+        -0.5f, -0.5f,  0.5f,    0.0f, 1.0f,  // bottom left front
+
+         0.5f,  0.5f,  0.5f,    1.0f, 1.0f,  // top right front
+         0.5f,  0.5f, -0.5f,    1.0f, 0.0f,  // top right back
+        -0.5f,  0.5f, -0.5f,    0.0f, 0.0f,  // top left back
+        -0.5f,  0.5f,  0.5f,    0.0f, 1.0f,  // top left front
+
+        -0.5f,  0.5f,  0.5f,    1.0f, 1.0f,  // top left front
+        -0.5f, -0.5f,  0.5f,    1.0f, 0.0f,  // bottom left front
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,  // bottom left back
+        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f,  // top left back
+
+         0.5f,  0.5f,  0.5f,    1.0f, 1.0f,  // top right front
+         0.5f, -0.5f,  0.5f,    1.0f, 0.0f,  // bottom right front
+         0.5f, -0.5f, -0.5f,    0.0f, 0.0f,  // bottom right back
+         0.5f,  0.5f, -0.5f,    0.0f, 1.0f,  // top right back
+    };
+
+    // Each line defines one triangle.  Two lines define one face of the cube.
+    GLuint indices[] = {
+         0,  1,  3,  // back
+         1,  2,  3,
+         4,  5,  7,  // front
+         5,  6,  7,
+         8,  9, 11,  // bottom
+         9, 10, 11,
+        12, 13, 15,  // top
+        13, 14, 15,
+        16, 17, 19,  // left
+        17, 18, 19,
+        20, 21, 23,  // right
+        21, 22, 23,
     };
     // clang-format on
-
-    GLuint indices[] = {
-        0, 1, 3,  // first triangle
-        1, 2, 3   // second triangle
-    };
 
     // Create a vertex array object (VAO).
     GLuint vao;
@@ -278,9 +314,7 @@ int main() {
     glfwSetKeyCallback(window, keyCallback);
     cursorPosCallback(window, 320, 240);
 
-    glm::mat4 modelMatrix = glm::translate(glm::vec3(0.0f, -0.8f, 0.0f));
-    modelMatrix =
-        glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 modelMatrix(1.0f);
     glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
     // The render loop
@@ -344,7 +378,7 @@ int main() {
         glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
         glClear(GL_COLOR_BUFFER_BIT);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
