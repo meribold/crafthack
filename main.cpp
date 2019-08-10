@@ -278,7 +278,7 @@ int main() {
     glfwSetKeyCallback(window, keyCallback);
     cursorPosCallback(window, 320, 240);
 
-    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.8f, 0.0f));
+    glm::mat4 modelMatrix = glm::translate(glm::vec3(0.0f, -0.8f, 0.0f));
     modelMatrix =
         glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
