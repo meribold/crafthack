@@ -221,8 +221,7 @@ GLuint createVertexArrayObject() {
 }
 
 static glm::mat4 viewRotation(1.0f);
-static glm::mat4 viewTranslation =
-    glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+static glm::mat4 viewTranslation = glm::translate(glm::vec3(0.0f, 0.0f, -3.0f));
 
 static GLint viewMatrixLocation;
 static GLint projectionMatrixLocation;
