@@ -1,0 +1,16 @@
+root = true
+
+[*]
+charset = utf_8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+max_line_length = 90
+
+[makefile]
+tab_width = 8
+indent_style = tab
+
+[.git/COMMIT_EDITMSG]
+max_line_length = 72
