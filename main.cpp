@@ -96,7 +96,7 @@ ShaderProgram::ShaderProgram(const std::string& vertexShaderPath,
 void ShaderProgram::use() { glUseProgram(this->handle); }
 
 static glm::mat4 viewRotation(1.0f);
-static glm::mat4 viewTranslation = glm::translate(glm::vec3(-20.0f, -3.0f, -20.0f));
+static glm::mat4 viewTranslation = glm::translate(glm::vec3(-30.0f, -33.0f, -30.0f));
 
 static GLint viewMatrixLocation;
 static GLint projectionMatrixLocation;
@@ -191,13 +191,15 @@ int main() {
     glm::mat4 modelMatrix(1.0f);
     glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-    Block blocks[40][40][40] = {};
-    for (std::size_t i = 0; i < 40; ++i) {
-        for (std::size_t k = 0; k < 40; ++k) {
-            int iOffset = static_cast<int>(i) - 20;
-            int kOffset = static_cast<int>(k) - 20;
-            if (iOffset * iOffset + kOffset * kOffset < 100) {
-                blocks[i][0][k] = Block::dirt;
+    Block blocks[60][60][60] = {};
+    for (std::size_t i = 0; i < 60; ++i) {
+        for (std::size_t j = 0; j < 30; ++j) {
+            for (std::size_t k = 0; k < 60; ++k) {
+                int iOffset = static_cast<int>(i) - 30;
+                int kOffset = static_cast<int>(k) - 30;
+                if (iOffset * iOffset + kOffset * kOffset < 900) {
+                    blocks[i][j][k] = Block::dirt;
+                }
             }
         }
     }
@@ -227,9 +229,9 @@ int main() {
             }
 
             glm::vec3 viewForward =
-                glm::transpose(glm::mat3(viewRotation)) * glm::vec3(0.0f, 0.0f, -4.0f);
+                glm::transpose(glm::mat3(viewRotation)) * glm::vec3(0.0f, 0.0f, -9.0f);
             glm::vec3 viewRight =
-                glm::transpose(glm::mat3(viewRotation)) * glm::vec3(4.0f, 0.0f, 0.0f);
+                glm::transpose(glm::mat3(viewRotation)) * glm::vec3(9.0f, 0.0f, 0.0f);
             switch (keyCode) {
                 case GLFW_KEY_W:
                     viewTranslation =
@@ -250,11 +252,11 @@ int main() {
                 // Use the space and C keys to go up and down in *world* coordinates.
                 case GLFW_KEY_SPACE:
                     viewTranslation = glm::translate(
-                        viewTranslation, glm::vec3(0.0f, -4.0f * pressDuration, 0.0f));
+                        viewTranslation, glm::vec3(0.0f, -9.0f * pressDuration, 0.0f));
                     break;
                 case GLFW_KEY_C:
                     viewTranslation = glm::translate(
-                        viewTranslation, glm::vec3(0.0f, 4.0f * pressDuration, 0.0f));
+                        viewTranslation, glm::vec3(0.0f, 9.0f * pressDuration, 0.0f));
                     break;
             }
         }
