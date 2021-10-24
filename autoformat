@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+fd '\.(hpp|cpp)$' -x clang-format -i --verbose
